@@ -19,7 +19,8 @@ export function module(_options: any): Rule {
         ...strings,
         ..._options,
       }),
-      move(`src/app/modules/${strings.dasherize(_options.name)}`)
+      // Change from src/app/modules to src/lib/modules for library use
+      move(`modules/${strings.dasherize(_options.name)}`)
     ]);
 
     return chain([

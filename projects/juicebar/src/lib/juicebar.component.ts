@@ -1,15 +1,32 @@
-import {Component, OnInit} from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import {NavigationService} from './core/services/navigation.service';
-import {CommonModule} from '@angular/common';
-
-import {AuthService} from './core/services/auth.service';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {Component, Inject, WritableSignal} from '@angular/core';
+import { AuthService } from './core/services/auth.service';
+import { CommonModule } from '@angular/common';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { UserMenuComponent } from './core/components/user-menu/user-menu.component';
+import {LoginComponent} from "./core/components/login/login.component";
+import {MatListItem, MatNavList} from "@angular/material/list";
+import {MatIcon} from "@angular/material/icon";
+import {Observable} from "rxjs";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
 
 @Component({
-  selector: 'app-root',
+  selector: 'lib-juicebar',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, MatProgressSpinnerModule],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    MatSidenavModule,
+    MatToolbarModule,
+    RouterLink,
+    UserMenuComponent,
+    LoginComponent,
+    MatNavList,
+    MatIcon,
+    MatListItem,
+    MatProgressSpinner
+  ],
   template: `
     @if (isLoading$ | async) {
       <div class="loading-container">
@@ -18,31 +35,13 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     } @else {
       <router-outlet></router-outlet>
     }
-  `
+  `,
 })
-export class JuicebarComponent implements OnInit {
-  title = 'client';
-  isLoading$;
 
-  constructor(private navigationService: NavigationService, private authService: AuthService) {
+export class JuicebarComponent {
+  isLoading$: Observable<boolean>;
+
+  constructor(private authService: AuthService) {
     this.isLoading$ = this.authService.isLoading$;
   }
-
-  ngOnInit() {
-    // Initialize navigation items
-    this.navigationService.addMenuItems([
-      {
-        label: 'Dashboard',
-        route: '/dashboard',
-        icon: 'dashboard'
-      },
-      {
-        label: 'Users',
-        route: '/users',
-        icon: 'people'
-      },
-      // Add more menu items as needed
-    ]);
-  }
-
 }

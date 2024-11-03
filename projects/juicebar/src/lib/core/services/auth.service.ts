@@ -51,9 +51,11 @@ export class AuthService {
     // Verify token by getting user info
     return this.getUserInfo().pipe(
       map(user => {
+        console.log(user);
         this.isLoadingSubject.next(false);
         const isAuthenticated = !!user;
         this.isAuthenticatedSubject.next(isAuthenticated);
+        console.log(isAuthenticated);
         return isAuthenticated;
       }),
       catchError((error: HttpErrorResponse) => {

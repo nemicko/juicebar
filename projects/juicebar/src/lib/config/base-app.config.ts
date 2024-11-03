@@ -3,7 +3,8 @@ import { CanActivateFn } from '@angular/router';
 
 export interface ModuleConfig {
   path: string;
-  component: () => Promise<Type<any>>;
+  component?: () => Promise<Type<any>>; // Optional for standalone components
+  loadChildren?: () => Promise<any>;     // Optional for modules
   guards?: CanActivateFn[];
   navigation?: {
     label: string;

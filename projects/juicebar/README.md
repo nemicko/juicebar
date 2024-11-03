@@ -1,24 +1,71 @@
 # Juicebar
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.0.
+An Angular 18+ library providing a standard application shell with authentication, navigation, and module management.
 
-## Code scaffolding
+## Features
+- Authentication flow with login/logout
+- Material Design layout with sidebar navigation
+- Dynamic module registration
+- Configurable routing
+- Schematics for generating new modules
 
-Run `ng generate component component-name --project juicebar` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project juicebar`.
-> Note: Don't forget to add `--project juicebar` or else it will be added to the default project in your `angular.json` file. 
+## Installation
+```bash
+npm install juicebar
+```
 
-## Build
+## Basic Usage
 
-Run `ng build juicebar` to build the project. The build artifacts will be stored in the `dist/` directory.
+```typescript
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideJuicebar } from 'juicebar';
 
-## Publishing
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideJuicebar({
+      apiUrl: environment.apiUrl,
+      appName: 'My Application',
+      modules: [
+        {
+          path: 'users',
+          component: () => import('./modules/users/users.component'),
+          navigation: {
+            label: 'Users',
+            icon: 'people'
+          }
+        }
+        // Add more modules here
+      ]
+    })
+  ]
+};
 
-After building your library with `ng build juicebar`, go to the dist folder `cd dist/juicebar` and run `npm publish`.
+// app.component.ts
+import { Component } from '@angular/core';
+import { JuicebarComponent } from 'juicebar';
 
-## Running unit tests
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [JuicebarComponent],
+  template: '<lib-juicebar></lib-juicebar>'
+})
+export class AppComponent {}
+```
 
-Run `ng test juicebar` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Generating New Modules
+```bash
+ng generate @juicebar/schematics:module my-module
+```
 
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Configuration
+The library can be configured through the BaseAppConfig interface:
+```typescript
+interface BaseAppConfig {
+  apiUrl: string;         // Your API endpoint
+  appName: string;        // Application name shown in header
+  modules: ModuleConfig[];// Array of module configurations
+  providers?: Provider[]; // Optional additional providers
+}
+```

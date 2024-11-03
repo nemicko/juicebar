@@ -1,62 +1,103 @@
-import { ApplicationConfig, Provider } from '@angular/core';
+import {APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject} from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import {provideRouter, Routes} from '@angular/router';
+import { provideRouter, Routes } from '@angular/router';
 import {BASE_APP_CONFIG, BaseAppConfig, ModuleConfig} from './config/base-app.config';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { AppComponent } from './core/components/app/app.component';
+import { authGuard } from './core/guards/auth.guard';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import {LoginComponent} from './core/components/login/login.component';
+import {MainComponent} from './core/components/main/main.component';
+import {NavigationService} from './core/services/navigation.service';
 
-export function provideBaseApp(config: BaseAppConfig): ApplicationConfig {
+
+export function provideJuicebar(config: BaseAppConfig): ApplicationConfig {
   const routes = generateRoutes(config.modules);
-
-  // Create the base providers first
-  const baseProviders = [
-    provideHttpClient(
-      withInterceptors([authInterceptor])
-    ),
-    provideAnimations(),
-    provideRouter(routes)
-  ];
-
-  // Then add configuration
-  const configProviders = [
-    {
-      provide: BASE_APP_CONFIG,
-      useValue: config
-    }
-  ];
 
   return {
     providers: [
-      ...baseProviders,
-      ...configProviders,
+      provideHttpClient(withInterceptors([authInterceptor])),
+      provideAnimations(),
+      provideRouter(routes),
+      importProvidersFrom(
+        MatSidenavModule,
+        MatToolbarModule,
+        MatListModule,
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatMenuModule
+      ),
+      {
+        provide: BASE_APP_CONFIG,
+        useValue: config
+      },
+      NavigationService, // Add NavigationService to providers
+      {
+        provide: APP_INITIALIZER,
+        useFactory: addMenuItems,
+        deps: [BASE_APP_CONFIG, NavigationService],
+        multi: true
+      },
       ...(config.providers || [])
     ]
+  };
+}
+
+function addMenuItems(config: BaseAppConfig, navigationService: NavigationService): () => void {
+  return () => {
+    config.modules.forEach(module => {
+      if (module.navigation) {
+        navigationService.addMenuItem({
+          label: module.navigation.label,
+          route: module.path,
+          icon: module.navigation.icon
+        });
+      }
+    });
   };
 }
 
 function generateRoutes(modules: ModuleConfig[]): Routes {
   return [
     {
+      path: 'login',
+      component: LoginComponent
+    },
+    {
       path: '',
-      component: AppComponent,
+      component: MainComponent,
+      canActivate: [authGuard],
       children: [
         {
           path: '',
-          redirectTo: 'dashboard',
+          redirectTo: 'profile',
           pathMatch: 'full'
+        },
+        {
+          path: 'profile',
+          loadComponent: () =>
+            import('../lib/core/components/profile/profile.component').then(m => m.ProfileComponent)
         },
         ...modules.map(module => ({
           path: module.path,
-          loadComponent: module.component,
-          canActivate: module.guards || []
+          ...(module.component ? { loadComponent: module.component } : { loadChildren: module.loadChildren }), // Conditional property assignment
+          canActivate: module.guards || [],
+          navigation: module.navigation
         }))
       ]
-    },
-    {
-      path: 'login',
-      loadComponent: () => import('./core/components/login/login.component')
-        .then(m => m.LoginComponent)
     }
   ];
 }

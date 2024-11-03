@@ -2,8 +2,7 @@
   "name": "juicebar",
   "version": "0.0.0",
   "scripts": {
-    "build:all": "ng build juicebar && ng build shell --configuration production",
-    "postbuild:all": "cp -r dist/shell/* dist/juicebar/shell/"
+    "build": "ng build juicebar --configuration production"
   },
   "schematics": "./schematics/collection.json",
   "private": true,
