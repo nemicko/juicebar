@@ -48,7 +48,7 @@ export class LoginComponent implements OnInit {
     // Redirect if already authenticated
     this.authService.isAuthenticated$.subscribe(isAuthenticated => {
       if (isAuthenticated) {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/profile']);
       }
     });
   }
@@ -61,7 +61,7 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(username, password).subscribe({
         next: () => {
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/profile']);
         },
         error: (error) => {
           this.isLoading = false;

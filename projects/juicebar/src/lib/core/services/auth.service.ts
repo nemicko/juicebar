@@ -1,7 +1,7 @@
 // core/services/auth.service.ts
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
-import {BehaviorSubject, catchError, Observable, of} from 'rxjs';
+import {BehaviorSubject, catchError, Observable, of, throwError} from 'rxjs';
 import {map, tap} from 'rxjs/operators';
 import {User} from '../models/user.model';
 import {Router} from '@angular/router';
@@ -95,11 +95,22 @@ export class AuthService {
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/gateway`, body)
       .pipe(
-        tap(data => {
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-            this.isAuthenticatedSubject.next(true);
+        map(response => {
+          if (!response.token) {
+            throw new Error('Authentication failed: No token received');
           }
+          return response;
+        }),
+        tap(data => {
+          localStorage.setItem('token', <any> data.token);
+          this.isAuthenticatedSubject.next(true);
+        }),
+        catchError(error => {
+          this.isAuthenticatedSubject.next(false);
+          if (error.message.includes('No token received')) {
+            return throwError(() => new Error('Login failed: Invalid credentials'));
+          }
+          return throwError(() => new Error('Login failed: Server error'));
         })
       );
   }
