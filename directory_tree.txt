@@ -1,0 +1,72 @@
+
+├── projects
+│   ├── juicebar
+│   │   ├── schematics
+│   │   │   ├── module
+│   │   │   │   ├── files
+│   │   │   │   │   ├── __name@dasherize__.component.ts.template
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── schema.json
+│   │   │   ├── collection.json
+│   │   ├── src
+│   │   │   ├── lib
+│   │   │   │   ├── config
+│   │   │   │   │   ├── app.config.ts
+│   │   │   │   │   ├── base-app.config.ts
+│   │   │   │   │   ├── default.config.ts
+│   │   │   │   ├── core
+│   │   │   │   │   ├── components
+│   │   │   │   │   │   ├── login
+│   │   │   │   │   │   │   ├── login.component.html
+│   │   │   │   │   │   │   ├── login.component.scss
+│   │   │   │   │   │   │   ├── login.component.spec.ts
+│   │   │   │   │   │   │   ├── login.component.ts
+│   │   │   │   │   │   ├── main
+│   │   │   │   │   │   │   ├── main.component.html
+│   │   │   │   │   │   │   ├── main.component.scss
+│   │   │   │   │   │   │   ├── main.component.spec.ts
+│   │   │   │   │   │   │   ├── main.component.ts
+│   │   │   │   │   │   ├── profile
+│   │   │   │   │   │   │   ├── profile.component.ts
+│   │   │   │   │   │   ├── user-menu
+│   │   │   │   │   │   │   ├── user-menu.component.ts
+│   │   │   │   │   ├── guards
+│   │   │   │   │   │   ├── auth-resolve.guard.ts
+│   │   │   │   │   │   ├── auth.guard.ts
+│   │   │   │   │   ├── interceptors
+│   │   │   │   │   │   ├── auth.interceptor.ts
+│   │   │   │   │   ├── models
+│   │   │   │   │   │   ├── user.model.ts
+│   │   │   │   │   ├── services
+│   │   │   │   │   │   ├── auth-initializer.service.ts
+│   │   │   │   │   │   ├── auth.service.ts
+│   │   │   │   │   │   ├── config.service.ts
+│   │   │   │   │   │   ├── navigation.service.ts
+│   │   │   │   ├── environments
+│   │   │   │   │   ├── environment.development.ts
+│   │   │   │   ├── modules
+│   │   │   │   │   ├── dashboard
+│   │   │   │   │   │   ├── dashboard.component.html
+│   │   │   │   │   │   ├── dashboard.component.scss
+│   │   │   │   │   │   ├── dashboard.component.spec.ts
+│   │   │   │   │   │   ├── dashboard.component.ts
+│   │   │   │   ├── shared
+│   │   │   │   │   ├── shared.module.ts
+│   │   │   │   ├── bootstrap.ts
+│   │   │   │   ├── juicebar.component.scss
+│   │   │   │   ├── juicebar.component.ts
+│   │   │   ├── public-api.ts
+│   │   ├── ng-package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   ├── tsconfig.lib.json
+│   │   ├── tsconfig.lib.prod.json
+│   │   ├── tsconfig.spec.json
+├── .DS_Store
+├── .editorconfig
+├── .gitignore
+├── angular.json
+├── package.json
+├── parser.py
+├── README.md
+├── tsconfig.json

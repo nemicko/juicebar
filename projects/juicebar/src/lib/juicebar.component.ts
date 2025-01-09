@@ -12,7 +12,7 @@ import {Observable} from "rxjs";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 
 @Component({
-  selector: 'lib-juicebar',
+  selector: 'juicebox-lib',
   standalone: true,
   imports: [
     CommonModule,

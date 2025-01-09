@@ -1,0 +1,1582 @@
+
+================================================================================
+projects/juicebar/schematics/module/files/__name@dasherize__.component.ts.template:
+================================================================================
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+
+@Component({
+  selector: 'app-<%= dasherize(name) %>',
+  standalone: true,
+  imports: [CommonModule, MatCardModule],
+  template: `
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title><%= classify(name) %></mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>This is the <%= dasherize(name) %> module content.</p>
+      </mat-card-content>
+    </mat-card>
+  `,
+  styles: [`
+    :host {
+      display: block;
+      padding: 20px;
+    }
+  `]
+})
+export class <%= classify(name) %>Component {}
+
+
+================================================================================
+projects/juicebar/schematics/module/index.ts:
+================================================================================
+// projects/juicebar/schematics/module/index.ts
+import {
+  Rule,
+  SchematicContext,
+  Tree,
+  apply,
+  url,
+  template,
+  move,
+  chain,
+  mergeWith
+} from '@angular-devkit/schematics';
+import { strings } from '@angular-devkit/core';
+
+export function module(_options: any): Rule {
+  return (tree: Tree, _context: SchematicContext) => {
+    const templateSource = apply(url('./files'), [
+      template({
+        ...strings,
+        ..._options,
+      }),
+      // Change from src/app/modules to src/lib/modules for library use
+      move(`modules/${strings.dasherize(_options.name)}`)
+    ]);
+
+    return chain([
+      mergeWith(templateSource)
+    ])(tree, _context);
+  };
+}
+
+
+================================================================================
+projects/juicebar/schematics/module/schema.json:
+================================================================================
+{
+  "$schema": "http://json-schema.org/schema",
+  "id": "ModuleSchematic",
+  "title": "Module Schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the module",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What name would you like to use for the module?"
+    }
+  },
+  "required": ["name"]
+}
+
+
+================================================================================
+projects/juicebar/schematics/collection.json:
+================================================================================
+{
+  "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+  "module": {
+    "description": "Generate a new module",
+      "factory": "./module/index#module",
+      "schema": "./module/schema.json"
+  }
+}
+}
+
+
+================================================================================
+projects/juicebar/src/lib/config/app.config.ts:
+================================================================================
+export interface AppConfig {
+  apiUrl: string;
+  // Add other configuration properties
+  defaultLanguage?: string;
+  pageSize?: number;
+  // ... other config properties
+}
+
+
+================================================================================
+projects/juicebar/src/lib/config/base-app.config.ts:
+================================================================================
+import {Provider, EnvironmentProviders, Type, InjectionToken} from '@angular/core';
+import { CanActivateFn } from '@angular/router';
+
+export interface ModuleConfig {
+  path: string;
+  component?: () => Promise<Type<any>>; // Optional for standalone components
+  loadChildren?: () => Promise<any>;     // Optional for modules
+  guards?: CanActivateFn[];
+  navigation?: {
+    label: string;
+    icon?: string;
+  };
+}
+
+export interface BaseAppConfig {
+  apiUrl: string;
+  appName: string;
+  modules: ModuleConfig[];
+  providers?: (Provider | EnvironmentProviders)[];
+}
+
+// Add this export
+export const BASE_APP_CONFIG = new InjectionToken<BaseAppConfig>('BASE_APP_CONFIG');
+
+
+================================================================================
+projects/juicebar/src/lib/config/default.config.ts:
+================================================================================
+import {AppConfig} from './app.config';
+
+export const DEFAULT_CONFIG: AppConfig = {
+  apiUrl: '',
+  defaultLanguage: 'en',
+  pageSize: 10,
+  // ... other default values
+};
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/login/login.component.html:
+================================================================================
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <h1>Login</h1>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-container">
+          <mat-form-field appearance="outline">
+            <mat-label>Username</mat-label>
+            <input matInput formControlName="username" required>
+            @if (loginForm.get('username')?.errors?.['required'] && loginForm.get('username')?.touched) {
+              <mat-error>Username is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input matInput type="password" formControlName="password" required>
+            @if (loginForm.get('password')?.errors?.['required'] && loginForm.get('password')?.touched) {
+              <mat-error>Password is required</mat-error>
+            }
+          </mat-form-field>
+
+          @if (errorMessage) {
+            <div class="error-message">
+              {{ errorMessage }}
+            </div>
+          }
+        </div>
+
+        <div class="actions">
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="!loginForm.valid || isLoading">
+            @if (isLoading) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              Login
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/login/login.component.scss:
+================================================================================
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 20px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 14px;
+}
+
+mat-spinner {
+  margin-right: 8px;
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/login/login.component.spec.ts:
+================================================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { LoginComponent } from './login.component';
+
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(LoginComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/login/login.component.ts:
+================================================================================
+import {Component, OnInit} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../services/auth.service';
+import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
+import {Router} from '@angular/router';
+
+@Component({
+  selector: 'app-login-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatCard,
+    MatCardHeader,
+    MatCardContent
+  ],
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss']
+})
+export class LoginComponent implements OnInit {
+  loginForm: FormGroup;
+  isLoading = false;
+  errorMessage = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      username: ['michael@juice.com.hr', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  ngOnInit() {
+    // Redirect if already authenticated
+    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      if (isAuthenticated) {
+        this.router.navigate(['/dashboard']);
+      }
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      this.isLoading = true;
+      this.errorMessage = '';
+      const { username, password } = this.loginForm.value;
+
+      this.authService.login(username, password).subscribe({
+        next: () => {
+          this.router.navigate(['/dashboard']);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = 'Invalid username or password';
+          console.error('Login failed:', error);
+        }
+      });
+    }
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/main/main.component.html:
+================================================================================
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #drawer class="sidenav" fixedInViewport
+      [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+      [mode]="(isHandset$ | async) ? 'over' : 'side'"
+      [opened]="(isHandset$ | async) === false">
+    <mat-toolbar>Menu</mat-toolbar>
+    <mat-nav-list>
+      @for (item of menuItems(); track item.route) {
+        <a mat-list-item [routerLink]="item.route">
+          <mat-icon>{{item.icon}}</mat-icon>
+          {{item.label}}
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      @if (isHandset$ | async) {
+        <button
+          type="button"
+          aria-label="Toggle sidenav"
+          mat-icon-button
+          (click)="drawer.toggle()">
+          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+        </button>
+      }
+      <span>{{ appName }}####</span>
+      <span class="toolbar-spacer"></span>
+      <app-user-menu></app-user-menu>
+    </mat-toolbar>
+    <!-- Add Content Here -->
+    <div class="content">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/main/main.component.scss:
+================================================================================
+.sidenav-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 250px;
+  background: #c4c4c4;
+}
+
+.sidenav .mat-toolbar {
+  background: #c4c4c4;
+}
+
+.mat-toolbar.mat-primary {
+  background: #c4c4c4;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.content {
+  padding: 20px;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.nav-label {
+  margin-left: 8px;
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/main/main.component.spec.ts:
+================================================================================
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
+import { MainComponent } from './main.component';
+
+describe('NavigationComponent', () => {
+  let component: MainComponent;
+  let fixture: ComponentFixture<MainComponent>;
+
+  beforeEach(waitForAsync(() => {
+    TestBed.configureTestingModule({
+      imports: [NoopAnimationsModule]
+    }).compileComponents();
+  }));
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(MainComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should compile', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/main/main.component.ts:
+================================================================================
+import {Component, Inject, inject} from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { AsyncPipe } from '@angular/common';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { Observable } from 'rxjs';
+import { map, shareReplay } from 'rxjs/operators';
+import {NavigationService} from '../../services/navigation.service';
+import {RouterLink, RouterOutlet} from '@angular/router';
+import {UserMenuComponent} from '../user-menu/user-menu.component';
+import {BASE_APP_CONFIG, BaseAppConfig} from '../../../config/base-app.config';
+import {AuthService} from '../../services/auth.service';
+
+@Component({
+  selector: 'app-main',
+  templateUrl: './main.component.html',
+  styleUrl: './main.component.scss',
+  standalone: true,
+  imports: [
+    MatToolbarModule,
+    MatButtonModule,
+    MatSidenavModule,
+    MatListModule,
+    MatIconModule,
+    AsyncPipe,
+    RouterLink,
+    UserMenuComponent,
+    RouterOutlet,
+  ]
+})
+export class MainComponent {
+  private breakpointObserver = inject(BreakpointObserver);
+  appName: string;
+  menuItems;
+
+  constructor(private navigationService: NavigationService,
+              @Inject(BASE_APP_CONFIG) private config: BaseAppConfig,
+              private authService: AuthService,) {
+    this.menuItems = this.navigationService.getMenuItems();
+    this.appName = config.appName;
+  }
+
+  isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
+    .pipe(
+      map(result => result.matches),
+      shareReplay()
+    );
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/profile/profile.component.ts:
+================================================================================
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import {AuthService} from '../../services/auth.service';
+//import { AuthService } from '../../core/services/auth.service';
+
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  imports: [CommonModule, MatCardModule],
+  template: `
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Profile</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (currentUser$ | async; as user) {
+          <div class="profile-info">
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Name:</strong> {{ user.firstName }} {{ user.lastName }}</p>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  `,
+  styles: [`
+    .profile-info {
+      margin-top: 16px;
+    }
+  `]
+})
+export class ProfileComponent {
+  currentUser$ ;
+
+  constructor(private authService: AuthService) {
+    this.currentUser$ = this.authService.currentUser$;
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/components/user-menu/user-menu.component.ts:
+================================================================================
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../services/auth.service';
+
+@Component({
+  selector: 'app-user-menu',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatIconModule
+  ],
+  template: `
+    @if (currentUser$ | async; as user) {
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
+        <mat-icon>account_circle</mat-icon>
+        <span class="username">{{ user.username }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        <a mat-menu-item routerLink="/profile">
+          <mat-icon>person</mat-icon>
+          <span>Profile</span>
+        </a>
+        <button mat-menu-item (click)="onLogout()">
+          <mat-icon>exit_to_app</mat-icon>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    }
+  `,
+  styles: [`
+    .user-button {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .username {
+      margin: 0 4px;
+    }
+  `]
+})
+export class UserMenuComponent {
+  currentUser$ ;
+
+  constructor(private authService: AuthService) {
+    this.currentUser$ = this.authService.currentUser$;
+}
+
+  onLogout() {
+    this.authService.logout();
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/guards/auth-resolve.guard.ts:
+================================================================================
+// auth-resolve.guard.ts
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
+import {Observable, of, switchMap} from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { User } from '../models/user.model';
+
+@Injectable({ providedIn: 'root' })
+export class AuthResolveGuard implements Resolve<User | null> {
+  constructor(private authService: AuthService) {}
+
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<User | null> {
+    return this.authService.checkAuthStatus().pipe(
+      switchMap(isAuthenticated => {
+        if (isAuthenticated) {
+          return this.authService.getUserInfo();
+        } else {
+          // Optionally redirect here or let the component handle it
+          return of(null);
+        }
+      })
+    );
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/guards/auth.guard.ts:
+================================================================================
+import { inject } from '@angular/core';
+import { Router, type CanActivateFn } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import {firstValueFrom} from 'rxjs';
+
+export const authGuard: CanActivateFn = async (route, state) => {
+  const router = inject(Router);
+  const authService = inject(AuthService);
+
+  const isAuthenticated = await firstValueFrom(authService.checkAuthStatus()); // Await the result
+
+  if (isAuthenticated) {
+    return true;
+  } else {
+    router.navigate(['/login']);
+    return false;
+  }
+};
+
+
+================================================================================
+projects/juicebar/src/lib/core/interceptors/auth.interceptor.ts:
+================================================================================
+import { HttpInterceptorFn } from '@angular/common/http';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = localStorage.getItem('token');
+
+  if (token) {
+    req = req.clone({
+      setHeaders: {
+        "authorization": `${token}`
+      }
+    });
+  }
+
+  return next(req);
+};
+
+
+================================================================================
+projects/juicebar/src/lib/core/models/user.model.ts:
+================================================================================
+export interface User {
+  username: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  // add other user properties as needed
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/services/auth-initializer.service.ts:
+================================================================================
+import { Injectable } from '@angular/core';
+import { AuthService } from './auth.service';
+import { firstValueFrom } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthInitializerService {
+  constructor(private authService: AuthService) {}
+
+  initializeAuth(): Promise<boolean> {
+    return firstValueFrom(this.authService.checkAuthStatus());
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/services/auth.service.ts:
+================================================================================
+// core/services/auth.service.ts
+import {Injectable} from '@angular/core';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {BehaviorSubject, catchError, Observable, of} from 'rxjs';
+import {map, tap} from 'rxjs/operators';
+import {User} from '../models/user.model';
+import {Router} from '@angular/router';
+import {ConfigService} from './config.service';
+
+interface LoginResponse {
+  // adjust based on your backend response
+  token?: string;
+
+  // other fields...
+  [key: string]: any;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+
+  isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  currentUser$ = this.currentUserSubject.asObservable();
+
+  private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.isLoadingSubject.asObservable();
+
+  private apiUrl: string;
+
+  constructor(
+    private http: HttpClient,
+    private config: ConfigService,
+    private router: Router
+  ) {
+    this.apiUrl = this.config.get('apiUrl');
+  }
+
+  checkAuthStatus(): Observable<boolean> {
+    this.isLoadingSubject.next(true);
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      this.isLoadingSubject.next(false);
+      this.isAuthenticatedSubject.next(false);
+      return of(false);
+    }
+
+    // Verify token by getting user info
+    return this.getUserInfo().pipe(
+      map(user => {
+        console.log(user);
+        this.isLoadingSubject.next(false);
+        const isAuthenticated = !!user;
+        this.isAuthenticatedSubject.next(isAuthenticated);
+        console.log(isAuthenticated);
+        return isAuthenticated;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        // Only logout if it's an authentication error (401)
+        if (error.status === 401) {
+          this.logout();
+        }
+        return of(false);
+      })
+    );
+  }
+
+  getUserInfo(): Observable<User> {
+    const body: any = {
+      'service': 'juicebox',
+      'method': 'getJuiceboxUser',
+      'params': []
+    };
+
+    return this.http.post<User>(`${this.apiUrl}/gateway`, body).pipe(
+      tap(user => {
+        this.currentUserSubject.next(user);
+        this.isAuthenticatedSubject.next(true);
+      })
+    );
+  }
+
+  login(username: string, password: string) {
+    const body: any = {
+      'service': 'juicebox:authentication:service',
+      'method': 'auth',
+      'params': ["juicebox:user", null, {
+        email: username,
+        password: password
+      }, {}]
+    };
+
+    return this.http.post<LoginResponse>(`${this.apiUrl}/gateway`, body)
+      .pipe(
+        tap(data => {
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            this.isAuthenticatedSubject.next(true);
+          }
+        })
+      );
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    this.isAuthenticatedSubject.next(false);
+    this.currentUserSubject.next(null);
+    this.router.navigate(['/login']);
+  }
+
+
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/services/config.service.ts:
+================================================================================
+import { Injectable } from '@angular/core';
+import {AppConfig} from '../../config/app.config';
+import {DEFAULT_CONFIG} from '../../config/default.config';
+import {environment} from '../../environments/environment.development';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ConfigService {
+  private config: AppConfig;
+
+  constructor() {
+    // Merge default config with environment values
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...environment
+    };
+  }
+
+  get<K extends keyof AppConfig>(key: K): AppConfig[K] {
+    return this.config[key];
+  }
+
+  getConfig(): AppConfig {
+    return this.config;
+  }
+
+  // Optional: method to load config from backend
+  /*
+  loadConfig() {
+    return this.http.get<AppConfig>('/api/config')
+      .pipe(
+        tap(config => {
+          this.config = {
+            ...this.config,
+            ...config
+          };
+        })
+      );
+  }
+  */
+}
+
+
+================================================================================
+projects/juicebar/src/lib/core/services/navigation.service.ts:
+================================================================================
+import { Injectable, signal } from '@angular/core';
+
+export interface MenuItem {
+  label: string;
+  route: string;
+  icon?: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class NavigationService {
+  private menuItems = signal<MenuItem[]>([]);
+
+  getMenuItems() {
+    return this.menuItems;
+  }
+
+  addMenuItem(item: MenuItem) {
+    this.menuItems.update(items => [...items, item]);
+  }
+
+  addMenuItems(items: MenuItem[]) {
+    this.menuItems.update(currentItems => [...currentItems, ...items]);
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/lib/environments/environment.development.ts:
+================================================================================
+// environments/environment.development.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000',  // your development API endpoint
+  // other configuration values...
+};
+
+
+================================================================================
+projects/juicebar/src/lib/modules/dashboard/dashboard.component.html:
+================================================================================
+<p>dashboard works!</p>
+
+
+================================================================================
+projects/juicebar/src/lib/modules/dashboard/dashboard.component.scss:
+================================================================================
+
+
+================================================================================
+projects/juicebar/src/lib/modules/dashboard/dashboard.component.spec.ts:
+================================================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { DashboardComponent } from './dashboard.component';
+
+describe('DashboardComponent', () => {
+  let component: DashboardComponent;
+  let fixture: ComponentFixture<DashboardComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [DashboardComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(DashboardComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+================================================================================
+projects/juicebar/src/lib/modules/dashboard/dashboard.component.ts:
+================================================================================
+// features/dashboard/dashboard.component.ts
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, MatCardModule],
+  template: `
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Dashboard</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        Dashboard content goes here
+      </mat-card-content>
+    </mat-card>
+  `
+})
+export class DashboardComponent {
+  constructor() {}
+}
+
+
+================================================================================
+projects/juicebar/src/lib/shared/shared.module.ts:
+================================================================================
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+
+
+@NgModule({
+  declarations: [],
+  imports: [
+    CommonModule
+  ]
+})
+export class SharedModule { }
+
+
+================================================================================
+projects/juicebar/src/lib/bootstrap.ts:
+================================================================================
+import {APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject} from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter, Routes } from '@angular/router';
+import {BASE_APP_CONFIG, BaseAppConfig, ModuleConfig} from './config/base-app.config';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { authGuard } from './core/guards/auth.guard';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import {LoginComponent} from './core/components/login/login.component';
+import {MainComponent} from './core/components/main/main.component';
+import {NavigationService} from './core/services/navigation.service';
+
+
+export function provideJuicebar(config: BaseAppConfig): ApplicationConfig {
+  const routes = generateRoutes(config.modules);
+
+  return {
+    providers: [
+      provideHttpClient(withInterceptors([authInterceptor])),
+      provideAnimations(),
+      provideRouter(routes),
+      importProvidersFrom(
+        MatSidenavModule,
+        MatToolbarModule,
+        MatListModule,
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatMenuModule
+      ),
+      {
+        provide: BASE_APP_CONFIG,
+        useValue: config
+      },
+      NavigationService, // Add NavigationService to providers
+      {
+        provide: APP_INITIALIZER,
+        useFactory: addMenuItems,
+        deps: [BASE_APP_CONFIG, NavigationService],
+        multi: true
+      },
+      ...(config.providers || [])
+    ]
+  };
+}
+
+function addMenuItems(config: BaseAppConfig, navigationService: NavigationService): () => void {
+  return () => {
+    config.modules.forEach(module => {
+      if (module.navigation) {
+        navigationService.addMenuItem({
+          label: module.navigation.label,
+          route: module.path,
+          icon: module.navigation.icon
+        });
+      }
+    });
+  };
+}
+
+function generateRoutes(modules: ModuleConfig[]): Routes {
+  return [
+    {
+      path: 'login',
+      component: LoginComponent
+    },
+    {
+      path: '',
+      component: MainComponent,
+      canActivate: [authGuard],
+      children: [
+        {
+          path: '',
+          redirectTo: 'profile',
+          pathMatch: 'full'
+        },
+        {
+          path: 'profile',
+          loadComponent: () =>
+            import('../lib/core/components/profile/profile.component').then(m => m.ProfileComponent)
+        },
+        ...modules.map(module => ({
+          path: module.path,
+          ...(module.component ? { loadComponent: module.component } : { loadChildren: module.loadChildren }), // Conditional property assignment
+          canActivate: module.guards || [],
+          navigation: module.navigation
+        }))
+      ]
+    }
+  ];
+}
+
+
+================================================================================
+projects/juicebar/src/lib/juicebar.component.scss:
+================================================================================
+.loading-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fafafa;
+}
+
+.sidenav-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 250px;
+  background: #c4c4c4;
+}
+
+.sidenav .mat-toolbar {
+  background: #c4c4c4;
+}
+
+.mat-toolbar.mat-primary {
+  background: #c4c4c4;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.content {
+  padding: 20px;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.nav-label {
+  margin-left: 8px;
+}
+
+
+================================================================================
+projects/juicebar/src/lib/juicebar.component.ts:
+================================================================================
+import {Component, Inject, WritableSignal} from '@angular/core';
+import { AuthService } from './core/services/auth.service';
+import { CommonModule } from '@angular/common';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { UserMenuComponent } from './core/components/user-menu/user-menu.component';
+import {LoginComponent} from "./core/components/login/login.component";
+import {MatListItem, MatNavList} from "@angular/material/list";
+import {MatIcon} from "@angular/material/icon";
+import {Observable} from "rxjs";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
+
+@Component({
+  selector: 'lib-juicebar',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    MatSidenavModule,
+    MatToolbarModule,
+    RouterLink,
+    UserMenuComponent,
+    LoginComponent,
+    MatNavList,
+    MatIcon,
+    MatListItem,
+    MatProgressSpinner
+  ],
+  template: `
+    @if (isLoading$ | async) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+    } @else {
+      <router-outlet></router-outlet>
+    }
+  `,
+})
+
+export class JuicebarComponent {
+  isLoading$: Observable<boolean>;
+
+  constructor(private authService: AuthService) {
+    this.isLoading$ = this.authService.isLoading$;
+  }
+}
+
+
+================================================================================
+projects/juicebar/src/public-api.ts:
+================================================================================
+// Main components & bootstrap
+export * from './lib/juicebar.component';
+export * from './lib/bootstrap';
+
+// Components
+export * from './lib/core/components/login/login.component';
+export * from './lib/core/components/profile/profile.component';
+export * from './lib/core/components/user-menu/user-menu.component';
+export * from './lib/core/components/main/main.component';
+
+// Configuration
+export * from './lib/config/base-app.config';
+export * from './lib/config/app.config';
+
+// Guards & Services
+export * from './lib/core/guards/auth.guard';
+export * from './lib/core/services/auth.service';
+export * from './lib/core/services/navigation.service';
+export * from './lib/core/services/config.service';
+
+// Models & Interfaces
+export * from './lib/core/models/user.model';
+
+
+================================================================================
+projects/juicebar/ng-package.json:
+================================================================================
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/juicebar",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  }
+}
+
+================================================================================
+projects/juicebar/package.json:
+================================================================================
+{
+  "name": "juicebar",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^18.2.0",
+    "@angular/core": "^18.2.0",
+    "@angular/material": "^18.0.0",
+    "@angular/router": "^18.0.0",
+    "@angular/forms": "^18.2.0",
+    "@angular/cdk": "^18.0.0",
+    "@angular/animations": "^18.2.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
+
+
+================================================================================
+projects/juicebar/README.md:
+================================================================================
+# Juicebar
+
+An Angular 18+ library providing a standard application shell with authentication, navigation, and module management.
+
+## Features
+- Authentication flow with login/logout
+- Material Design layout with sidebar navigation
+- Dynamic module registration
+- Configurable routing
+- Schematics for generating new modules
+
+## Installation
+```bash
+npm install juicebar
+```
+
+## Basic Usage
+
+```typescript
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideJuicebar } from 'juicebar';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideJuicebar({
+      apiUrl: environment.apiUrl,
+      appName: 'My Application',
+      modules: [
+        {
+          path: 'users',
+          component: () => import('./modules/users/users.component'),
+          navigation: {
+            label: 'Users',
+            icon: 'people'
+          }
+        }
+        // Add more modules here
+      ]
+    })
+  ]
+};
+
+// app.component.ts
+import { Component } from '@angular/core';
+import { JuicebarComponent } from 'juicebar';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [JuicebarComponent],
+  template: '<lib-juicebar></lib-juicebar>'
+})
+export class AppComponent {}
+```
+
+## Generating New Modules
+```bash
+ng generate @juicebar/schematics:module my-module
+```
+
+## Configuration
+The library can be configured through the BaseAppConfig interface:
+```typescript
+interface BaseAppConfig {
+  apiUrl: string;         // Your API endpoint
+  appName: string;        // Application name shown in header
+  modules: ModuleConfig[];// Array of module configurations
+  providers?: Provider[]; // Optional additional providers
+}
+```
+
+
+================================================================================
+projects/juicebar/tsconfig.lib.json:
+================================================================================
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/lib",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "types": []
+  },
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}
+
+
+================================================================================
+projects/juicebar/tsconfig.lib.prod.json:
+================================================================================
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "declarationMap": false
+  },
+  "angularCompilerOptions": {
+    "compilationMode": "partial"
+  }
+}
+
+
+================================================================================
+projects/juicebar/tsconfig.spec.json:
+================================================================================
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/spec",
+    "types": [
+      "jasmine"
+    ]
+  },
+  "include": [
+    "**/*.spec.ts",
+    "**/*.d.ts"
+  ]
+}
+
+
+================================================================================
+.DS_Store:
+Error reading file: 'utf-8' codec can't decode byte 0x80 in position 3131: invalid start byte
+================================================================================
+
+================================================================================
+.editorconfig:
+================================================================================
+# Editor configuration, see https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.ts]
+quote_type = single
+ij_typescript_use_double_quotes = false
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+
+
+================================================================================
+.gitignore:
+================================================================================
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# System files
+.DS_Store
+Thumbs.db
+
+
+================================================================================
+angular.json:
+================================================================================
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "juicebar": {
+      "projectType": "library",
+      "root": "projects/juicebar",
+      "sourceRoot": "projects/juicebar/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/juicebar/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/juicebar/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/juicebar/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "tsConfig": "projects/juicebar/tsconfig.spec.json",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
+
+================================================================================
+package.json:
+================================================================================
+{
+  "name": "juicebar",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "ng build juicebar --configuration production"
+  },
+  "schematics": "./schematics/collection.json",
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^18.2.0",
+    "@angular/cdk": "^18.0.0",
+    "@angular/common": "^18.2.0",
+    "@angular/compiler": "^18.2.0",
+    "@angular/core": "^18.2.0",
+    "@angular/forms": "^18.2.0",
+    "@angular/material": "^18.0.0",
+    "@angular/platform-browser": "^18.2.0",
+    "@angular/platform-browser-dynamic": "^18.2.0",
+    "@angular/router": "^18.0.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.14.10"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^18.2.11",
+    "@angular/cli": "^18.2.11",
+    "@angular/compiler-cli": "^18.2.0",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.2.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "ng-packagr": "^18.2.0",
+    "typescript": "~5.5.2"
+  }
+}
+
